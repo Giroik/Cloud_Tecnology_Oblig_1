@@ -10,8 +10,8 @@ import (
 
 func StatusHandler(w http.ResponseWriter, r *http.Request, startTime time.Time) {
 
-	countriesNowAPIStatus := utility.GetAPIStatus(constants.COUNTRIESNOWAPI, constants.ENDPOINTALL)
-	restCountriesAPIStatus := utility.GetAPIStatus(constants.RESTCOUNTRIESAPI, constants.ENDPOINTCOUNTRIES)
+	countriesNowAPIStatus := utility.GetAPIStatus(constants.COUNTRIES_NOW_API, constants.ENDPOINTALL)
+	restCountriesAPIStatus := utility.GetAPIStatus(constants.REST_COUNTRIES_API, constants.ENDPOINTCOUNTRIES)
 
 	status := utility.StatusStructur{
 
