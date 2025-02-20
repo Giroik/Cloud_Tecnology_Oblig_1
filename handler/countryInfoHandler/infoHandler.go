@@ -7,12 +7,15 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
+	"strconv"
 	"strings"
 )
 
 func InfoHandler(w http.ResponseWriter, request *http.Request) {
 	// Convert ISO code to country
-	isoCode := formatISO(request.URL.Path, constants.CONTRY_INFORMATION)
+	isoCode, limit := formatISOandLimit(request.URL.String())
+
 	countryName, countryError := checkCountryISO(isoCode)
 	if countryError != nil {
 		http.Error(w, countryError.Error(), http.StatusInternalServerError)
@@ -26,7 +29,7 @@ func InfoHandler(w http.ResponseWriter, request *http.Request) {
 	println(string(jsonStr))
 
 	// Create new request with new url
-	restCountrysAlpha := constants.REQUEST_REST_COUNTRIES_API_ALPHA + isoCode + "/"
+	restCountrysAlpha := constants.REQUEST_REST_COUNTRIES_API_ALPHA + isoCode
 
 	countrysNowCities := constants.COUNTRUES_NOW_ALL_CITIES
 
@@ -92,7 +95,15 @@ func InfoHandler(w http.ResponseWriter, request *http.Request) {
 		log.Println("Error in decoding response from city: ", errDecoder2.Error())
 	}
 	//puting all cities in country information
-	countries[0].Cities = cities.Cities
+	if limit == -1 {
+		countries[0].Cities = cities.Cities
+	} else if limit > 0 {
+		for i, city := range cities.Cities {
+			if i < limit {
+				countries[0].Cities = append(countries[0].Cities, city)
+			}
+		}
+	}
 
 	// Printing decoded output
 	w.Header().Set("Content-Type", "application/json")
@@ -101,7 +112,6 @@ func InfoHandler(w http.ResponseWriter, request *http.Request) {
 }
 
 func checkCountryISO(userIso string) (string, error) {
-	fmt.Println(userIso)
 	userCountry := ""
 
 	isoURL := constants.REQUEST_ISO_CODES
@@ -146,11 +156,24 @@ func checkCountryISO(userIso string) (string, error) {
 	return userCountry, nil
 }
 
-func formatISO(request string, toDelete string) string {
-	splited := strings.Split(request, "/")
-	iso := splited[len(splited)-2]
+func formatISOandLimit(request string) (string, int) {
+	parsedURL, err := url.Parse(request)
+	if err != nil {
+		fmt.Println("Error parsing URL:", err)
+	}
+	path := parsedURL.Path
+	splitedPath := strings.Split(path, "/")
+	iso := splitedPath[len(splitedPath)-2]
+	fmt.Println(iso)
+	limitString := parsedURL.Query().Get("limit")
+	fmt.Println(limitString)
+	limit, err := strconv.Atoi(limitString)
+	if err != nil {
+		fmt.Println("Error parsing limit:", err)
+		limit = -1
+	}
 
-	return iso
+	return iso, limit
 }
 
 func checkLimit(url string) int {
