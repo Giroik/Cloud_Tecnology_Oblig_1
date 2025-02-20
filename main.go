@@ -2,6 +2,7 @@ package main
 
 import (
 	"OBLIG_1/handler"
+	"OBLIG_1/handler/countryInfoHandler"
 	"log"
 	"net/http"
 	"os"
@@ -22,7 +23,7 @@ func main() {
 	router := http.NewServeMux()
 
 	router.HandleFunc("/countryinfo/v1/", handler.FrontPageHandler)
-	router.HandleFunc("/countryinfo/v1/info/{country_code}/", handler.InfoHandler)
+	router.HandleFunc("/countryinfo/v1/info/{country_code}/", countryInfoHandler.InfoHandler)
 	//router.HandleFunc("/countryinfo/v1/population/{country_code}?limit={startYear-endYear}", handler.PopulationHandler)
 	router.HandleFunc("/countryinfo/v1/status/", func(w http.ResponseWriter, r *http.Request) {
 		handler.StatusHandler(w, r, startTime)
