@@ -1,4 +1,4 @@
-package handler
+package statusHandler
 
 import (
 	"OBLIG_1/constants"
@@ -13,7 +13,7 @@ func StatusHandler(w http.ResponseWriter, r *http.Request, startTime time.Time) 
 	countriesNowAPIStatus := utility.GetAPIStatus(constants.COUNTRIES_NOW_API, constants.ENDPOINTALL)
 	restCountriesAPIStatus := utility.GetAPIStatus(constants.REST_COUNTRIES_API, constants.ENDPOINTCOUNTRIES)
 
-	status := utility.StatusStructur{
+	status := StatusStructur{
 
 		CountriesNowAPI:  countriesNowAPIStatus,
 		RestCountriesAPI: restCountriesAPIStatus,

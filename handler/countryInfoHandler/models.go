@@ -11,11 +11,6 @@ type CountryInfoStructure struct {
 	Capital    []string          `json:"capital"`
 	Cities     []string          `json:"cities"`
 }
-type CountryIsoCheck struct {
-	Name NameInfo `json:"name"`
-	Cca2 string   `json:"cca2"`
-	Cca3 string   `json:"cca3"`
-}
 
 type CitiesInfoStructure struct {
 	Error  bool     `json:"error"`
@@ -36,16 +31,4 @@ type FlagsInfo struct {
 type CityData struct {
 	City    string `json:"city"`
 	Country string `json:"country"`
-}
-
-type CountryData struct {
-	Name string `json:"name"`
-	Iso2 string `json:"Iso2"`
-	Iso3 string `json:"Iso3"`
-}
-
-type CountriesNowISOCountries struct {
-	Error bool          `json:"error"`
-	Msg   string        `json:"msg"`
-	Data  []CountryData `json:"data"`
 }
