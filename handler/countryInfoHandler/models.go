@@ -1,10 +1,5 @@
 package countryInfoHandler
 
-type CountryStruct struct {
-	Country CountryInfoStructure `json:"country"`
-	Cities  []CityData           `json:"cities"`
-}
-
 // Structure for country
 type CountryInfoStructure struct {
 	Name       NameInfo          `json:"name"`
@@ -15,6 +10,11 @@ type CountryInfoStructure struct {
 	Flags      FlagsInfo         `json:"flags"`
 	Capital    []string          `json:"capital"`
 	Cities     []string          `json:"cities"`
+}
+type CountryIsoCheck struct {
+	Name NameInfo `json:"name"`
+	Cca2 string   `json:"cca2"`
+	Cca3 string   `json:"cca3"`
 }
 
 type CitiesInfoStructure struct {
@@ -44,18 +44,8 @@ type CountryData struct {
 	Iso3 string `json:"Iso3"`
 }
 
-type CityAPIResponce struct {
-	Error bool       `json:"error"`
-	Msg   string     `json:"msg"`
-	Data  []CityData `json:"data"`
-}
-
 type CountriesNowISOCountries struct {
 	Error bool          `json:"error"`
 	Msg   string        `json:"msg"`
 	Data  []CountryData `json:"data"`
-}
-
-type CountryPostMethod struct {
-	Country string `json:"country"`
 }
