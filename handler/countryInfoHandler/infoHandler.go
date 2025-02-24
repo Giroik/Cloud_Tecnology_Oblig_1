@@ -4,7 +4,7 @@ import (
 	"OBLIG_1/constants"
 	"OBLIG_1/utility"
 	"encoding/json"
-
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -16,13 +16,15 @@ func InfoHandler(w http.ResponseWriter, request *http.Request) {
 	isoCode, limit := utility.FormatISOandLimitOfCities(request.URL.String())
 	countryName, countryError := utility.GetCountryNameByISO(isoCode)
 	if countryError != nil {
-		http.Error(w, countryError.Error(), http.StatusInternalServerError)
+		fmt.Fprintf(w, "Error getting country name: %s", countryError.Error())
+		return
 	}
 
 	//preparing json Post-Method
 	requestBody, err := json.Marshal(map[string]string{"country": countryName})
 	if err != nil {
-		log.Println(err)
+		fmt.Fprintf(w, "Error marshalling request body: %s", err.Error())
+		return
 	}
 
 	// Create new request with new url
@@ -31,12 +33,12 @@ func InfoHandler(w http.ResponseWriter, request *http.Request) {
 
 	request1, errCountries := http.NewRequest(http.MethodGet, restCountriesAlpha, nil)
 	if errCountries != nil {
-		fmt.Errorf("Error in creating request for Countries:", errCountries.Error())
-	}
+		fmt.Println(w, "Error in creating request for Countries: %s", errCountries.Error())
 
+	}
 	request2, errCities := http.NewRequest("POST", countriesNowCities, strings.NewReader(string(requestBody)))
 	if errCities != nil {
-		fmt.Errorf("Error in creating request for Countries cities:", errCities.Error())
+		fmt.Println("Error in creating request for Countries cities:", errCities.Error())
 	}
 
 	// Setting content type -> effect depends on the service provider
@@ -50,32 +52,29 @@ func InfoHandler(w http.ResponseWriter, request *http.Request) {
 	// Issue request
 	resResponce1, errReq1 := client.Do(request1)
 	if errReq1 != nil {
-		fmt.Errorf("Error in response:", errReq1.Error())
+		fmt.Printf("Error in response:", errReq1.Error())
 	} else if resResponce1.StatusCode != http.StatusOK {
-		fmt.Errorf("Error in response:", resResponce1.Status)
+		fmt.Printf("Error in response:", resResponce1.Status)
 	} else if resResponce1.Header.Get("content-type") != "application/json" {
-		fmt.Errorf("Header structure is not application/json ", resResponce1.Status)
+		fmt.Printf("Header structure is not application/json ", resResponce1.Status)
 	}
 	defer resResponce1.Body.Close()
 
 	resResponce2, errReq2 := client.Do(request2)
 	if errReq2 != nil {
-		fmt.Errorf("Error in response:", errReq2.Error())
+		fmt.Printf("Error in response:", errReq2.Error())
 	} else if resResponce2.StatusCode != http.StatusOK {
-		fmt.Errorf("Error in response:", resResponce2.Status)
+		fmt.Printf("Error in response:", resResponce2.Status)
 	} else if resResponce2.Header.Get("content-type") != "application/json" {
-		fmt.Errorf("Header structure is not application/json ", resResponce2.Status)
+		fmt.Printf("Header structure is not application/json ", resResponce2.Status)
 	}
 	defer resResponce2.Body.Close()
 
-	//Printing out status of source api
-	/*fmt.Println("Status:", resResponce2.Status)
-	fmt.Println("Status code:", resResponce2.StatusCode)
-	fmt.Println("Content type:", resResponce2.Header.Get("content-type"))
-	fmt.Println("Protocol:", resResponce2.Proto)*/
-
 	// Decoding JSON
-	countries := buildingResponce(*resResponce1, *resResponce2, limit)
+	countries, countryErr := buildingResponce(*resResponce1, *resResponce2, limit)
+	if countryErr != nil {
+		fmt.Fprintf(w, "Error in building responce: %s", countryErr.Error())
+	}
 
 	// Printing decoded output
 	w.Header().Set("Content-Type", "application/json")
@@ -83,7 +82,7 @@ func InfoHandler(w http.ResponseWriter, request *http.Request) {
 
 }
 
-func buildingResponce(res1 http.Response, res2 http.Response, limit int) CountryInfoStructure {
+func buildingResponce(res1 http.Response, res2 http.Response, limit int) (CountryInfoStructure, error) {
 	//inserting information in structurs
 	var countries []CountryInfoStructure
 	decoderForCountry := json.NewDecoder(res1.Body)
@@ -105,6 +104,9 @@ func buildingResponce(res1 http.Response, res2 http.Response, limit int) Country
 			}
 		}
 	}
+	if countries[0].Cities == nil {
+		return countries[0], errors.New("No cities found for this country")
+	}
 
-	return countries[0]
+	return countries[0], nil
 }

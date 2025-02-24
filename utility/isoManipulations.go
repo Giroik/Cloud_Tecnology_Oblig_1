@@ -28,7 +28,7 @@ func FormatISOandLimitOfCities(request string) (string, int) {
 
 	return iso, limit
 }
-func FormatISOandPopulationYears(request string) (string, int, int) {
+func FormatISOandPopulationYears(request string) (string, int, int, error) {
 
 	parsedURL, err := url.Parse(request)
 	if err != nil {
@@ -38,31 +38,33 @@ func FormatISOandPopulationYears(request string) (string, int, int) {
 	splitedPath := strings.Split(path, "/")
 	iso := splitedPath[len(splitedPath)-1]
 	limitString := parsedURL.Query().Get("limit")
-	years := strings.Split(limitString, "-")
-	if len(years) == 1 {
-		startYear, syerr := strconv.Atoi(years[0])
-		if syerr != nil {
-			startYear = 0
+	if limitString != "" {
+		years := strings.Split(limitString, "-")
+		if len(years) == 1 {
+			startYear, syerr := strconv.Atoi(years[0])
+			if syerr != nil {
+				startYear = 0
+			}
+			return iso, startYear, -1, nil
+		} else if len(years) == 2 {
+			startYear, syerr := strconv.Atoi(years[0])
+			if syerr != nil {
+				startYear = 0
+			}
+			endYear, eyerr := strconv.Atoi(years[1])
+			if eyerr != nil {
+				endYear = 0
+			}
+			return iso, startYear, endYear, nil
+		} else if len(years) > 2 {
+			return iso, -1, -1, errors.New("Too many requests in ?limit=")
 		}
-		return iso, startYear, 0
-	} else if len(years) == 2 {
-		startYear, syerr := strconv.Atoi(years[0])
-		if syerr != nil {
-			startYear = 0
-		}
-		endYear, eyerr := strconv.Atoi(years[1])
-		if eyerr != nil {
-			endYear = 0
-		}
-		return iso, startYear, endYear
 	}
-
-	fmt.Println(limitString)
-	return iso, 0, 0
+	return iso, 0, 0, nil
 }
 
 func GetCountryNameByISO(userIso string) (string, error) {
-	userCountry := "notFound" //init string to return
+	userCountry := constants.NOT_FOUND //init string to return
 
 	//Creating url for get-request
 	isoURL := constants.REQUEST_ISO_CODES
@@ -70,7 +72,7 @@ func GetCountryNameByISO(userIso string) (string, error) {
 	//creating request to get all ISO
 	isoRequest, reqIsoErr := http.NewRequest(http.MethodGet, isoURL, nil)
 	if reqIsoErr != nil {
-		fmt.Println("Error in creating request for iso codes:", reqIsoErr.Error())
+		return "", errors.New("Error creating request for " + isoURL + ": " + reqIsoErr.Error())
 	}
 	isoRequest.Header.Add("Content-Type", "application/json")
 
@@ -106,10 +108,10 @@ func GetCountryNameByISO(userIso string) (string, error) {
 	//If not found run reserve API to confirm not existing
 	if userCountry == constants.NOT_FOUND {
 		countryName, myerror := getReserveCountryNameByISO(userIso)
-		userCountry = countryName //runs reserve api and tries to find ISO there
-		if userCountry == constants.NOT_FOUND {
-			return userCountry, myerror //returns error
+		if myerror != nil {
+			return "", myerror
 		}
+		userCountry = countryName //runs reserve api and tries to find ISO there
 	}
 	return userCountry, nil
 }
@@ -122,7 +124,7 @@ func getReserveCountryNameByISO(iso string) (string, error) {
 	//Creating request
 	reservIsoRequest, resReqIsoErr := http.NewRequest(http.MethodGet, reservIsoURL, nil)
 	if resReqIsoErr != nil {
-		fmt.Errorf("Error in creating request for iso codes:", resReqIsoErr.Error())
+		fmt.Println("Error in creating request for iso codes:", resReqIsoErr.Error())
 	}
 
 	//creating reserv Client
@@ -132,11 +134,11 @@ func getReserveCountryNameByISO(iso string) (string, error) {
 	//Geting responce
 	reservIsoResponce, resIsoErr := reservIsoClient.Do(reservIsoRequest)
 	if resIsoErr != nil {
-		fmt.Errorf("Error in response to reserve iso:", resIsoErr.Error())
+		fmt.Println("Error in response to reserve iso:", resIsoErr.Error())
 	} else if reservIsoResponce.StatusCode != http.StatusOK {
-		fmt.Errorf("Error in response to reserve iso:", reservIsoResponce.Status)
+		fmt.Println("Error in response to reserve iso:", reservIsoResponce.Status)
 	} else if reservIsoResponce.Header.Get("content-type") != "application/json" {
-		fmt.Errorf("Header structure is not application/json ", reservIsoResponce.Status)
+		fmt.Println("Header structure is not application/json ", reservIsoResponce.Status)
 	}
 	defer reservIsoResponce.Body.Close()
 
@@ -144,7 +146,7 @@ func getReserveCountryNameByISO(iso string) (string, error) {
 	var reserveIsoCheck []CountryIsoCheck
 	reserveIsoDecoder := json.NewDecoder(reservIsoResponce.Body)
 	if errDecoder := reserveIsoDecoder.Decode(&reserveIsoCheck); errDecoder != nil {
-		fmt.Errorf("Error in decoding response from reserve iso:", errDecoder.Error())
+		fmt.Println("Error in decoding response from reserve iso:", errDecoder.Error())
 	}
 	//searching for right country
 	for _, country := range reserveIsoCheck {
