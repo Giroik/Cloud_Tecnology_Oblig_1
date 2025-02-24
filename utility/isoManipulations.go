@@ -70,8 +70,9 @@ func GetCountryNameByISO(userIso string) (string, error) {
 	//creating request to get all ISO
 	isoRequest, reqIsoErr := http.NewRequest(http.MethodGet, isoURL, nil)
 	if reqIsoErr != nil {
-		fmt.Errorf("Error in creating request for iso codes:", reqIsoErr.Error())
+		fmt.Println("Error in creating request for iso codes:", reqIsoErr.Error())
 	}
+	isoRequest.Header.Add("Content-Type", "application/json")
 
 	// Creating independent client to get all iso codes
 	isoClient := &http.Client{}
@@ -80,11 +81,11 @@ func GetCountryNameByISO(userIso string) (string, error) {
 	//Getting Responce from server
 	isoResponse, isoErr := isoClient.Do(isoRequest)
 	if isoErr != nil {
-		fmt.Errorf("Error in response to iso:", isoErr.Error())
+		fmt.Println("Error in response to iso:", isoErr.Error())
 	} else if isoResponse.StatusCode != http.StatusOK {
-		fmt.Errorf("Error in response to iso:", isoResponse.Status)
+		fmt.Println("Error in response to iso:", isoResponse.Status)
 	} else if isoResponse.Header.Get("content-type") != "application/json" {
-		fmt.Errorf("Header structure is not application/json ", isoResponse.Status)
+		fmt.Println("Header structure is not application/json ", isoResponse.Status)
 	}
 	defer isoResponse.Body.Close()
 
@@ -92,7 +93,7 @@ func GetCountryNameByISO(userIso string) (string, error) {
 	var isoCountryInfo CountriesNowISOCountries
 	isoDecoder := json.NewDecoder(isoResponse.Body)
 	if errDecoder := isoDecoder.Decode(&isoCountryInfo); errDecoder != nil {
-		fmt.Errorf("Error in decoding response from iso codes:", errDecoder.Error())
+		fmt.Println("Error in decoding response from iso codes:", errDecoder.Error())
 	} else {
 		fmt.Println("All ", len(isoCountryInfo.Data), " iso codes are successful found")
 	}
@@ -104,9 +105,10 @@ func GetCountryNameByISO(userIso string) (string, error) {
 	}
 	//If not found run reserve API to confirm not existing
 	if userCountry == constants.NOT_FOUND {
-		userCountry, _ = getReserveCountryNameByISO(userIso) //runs reserve api and tries to find ISO there
+		countryName, myerror := getReserveCountryNameByISO(userIso)
+		userCountry = countryName //runs reserve api and tries to find ISO there
 		if userCountry == constants.NOT_FOUND {
-			return userCountry, errors.New("User country not found") //returns error
+			return userCountry, myerror //returns error
 		}
 	}
 	return userCountry, nil
