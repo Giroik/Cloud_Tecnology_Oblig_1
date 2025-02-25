@@ -44,6 +44,7 @@ func PopulationHandler(w http.ResponseWriter, r *http.Request) {
 	populationRequest, poperr := http.NewRequest("POST", postURL, strings.NewReader(string(requestBody)))
 	if poperr != nil {
 		fmt.Println("Error in creating request for Countries cities:", poperr.Error())
+		log.Fatal(poperr.Error())
 	}
 	populationRequest.Header.Add("Content-Type", "application/json")
 

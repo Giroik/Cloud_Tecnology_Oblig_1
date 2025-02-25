@@ -20,13 +20,16 @@ func FormatISOandLimitOfCities(request string) (string, int) {
 	splitedPath := strings.Split(path, "/")
 	iso := splitedPath[len(splitedPath)-2]
 	limitString := parsedURL.Query().Get("limit")
-	limit, err := strconv.Atoi(limitString)
-	if err != nil {
-		fmt.Println("Error parsing limit:", err)
-		limit = -1
+	if limitString != "" {
+		limit, err := strconv.Atoi(limitString)
+		if err != nil {
+			fmt.Println("Error parsing limit:", err)
+			return iso, constants.RESET_LIMIT
+		}
+		return iso, limit
 	}
 
-	return iso, limit
+	return iso, constants.RESET_LIMIT
 }
 func FormatISOandPopulationYears(request string) (string, int, int, error) {
 

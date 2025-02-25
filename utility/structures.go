@@ -18,9 +18,10 @@ type CountriesNowISOCountries struct {
 }
 
 type CountryData struct {
-	Name string `json:"name"`
-	Iso2 string `json:"Iso2"`
-	Iso3 string `json:"Iso3"`
+	Name        string `json:"name"`
+	OfisialName string `json:"ofisialName"`
+	Iso2        string `json:"Iso2"`
+	Iso3        string `json:"Iso3"`
 }
 type CountryIsoCheck struct {
 	Name NameInfo `json:"name"`

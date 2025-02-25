@@ -11,7 +11,7 @@ func GetAPIStatus(url string, endPoint string) int {
 
 	if err != nil {
 		fmt.Println("Error making HEAD request:", err)
-		return 404
+		return resp.StatusCode
 	} else if resp.StatusCode != http.StatusOK {
 		fmt.Println("Error making HEAD request, status code is:", resp.StatusCode)
 		return resp.StatusCode
