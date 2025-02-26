@@ -2,18 +2,17 @@ package populationHandler
 
 import (
 	"OBLIG_1/constants"
+	"OBLIG_1/handler/linker"
 	"OBLIG_1/utility"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"log"
 	"net/http"
-	"strings"
 )
 
 func PopulationHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-
 	//creating url for postRequest
 	postURL := constants.REQUEST_FILTERD_POPULATION
 
@@ -24,52 +23,58 @@ func PopulationHandler(w http.ResponseWriter, r *http.Request) {
 	//extracting information from users URL
 	isoCode, startY, endY, yearErr := utility.FormatISOandPopulationYears(r.URL.String())
 	if yearErr != nil {
-		fmt.Fprintf(w, "Error parsing ISO and population years: %s", yearErr.Error())
-		fmt.Fprintln(w, "Format have to be info/{iso_code}?limit=year - year")
+		linker.SendErrorAsJson("Error parsing ISO and population years:", yearErr, w)
+		fmt.Printf("Error parsing ISO and population years: %s /n Format have to be info/{iso_code}?limit=year - year", yearErr.Error())
 		return
 	}
 
 	//extracting name to country throw ISO code
-	countryName, countryError := utility.GetCountryNameByISO(isoCode)
+	countryName, officialName, countryError := utility.GetCountryNameByISO(isoCode)
 	if countryError != nil {
-		fmt.Fprintf(w, "Error getting country name: %s", countryError.Error())
+		linker.SendErrorAsJson("Error getting country name:", countryError, w)
+		fmt.Printf("Error getting country name: %s", countryError.Error())
 		return
 	}
 
-	requestBody, err := json.Marshal(map[string]string{"country": countryName})
-	if err != nil {
-		log.Println(err)
+	//preapering request
+	requestBody, err1 := json.Marshal(map[string]string{"country": countryName})
+	if err1 != nil {
+		log.Println(err1)
+	}
+	//reserve request if api usin official nameof country
+	reserveRequestBody, err2 := json.Marshal(map[string]string{"country": officialName})
+	if err2 != nil {
+		log.Println(err2)
 	}
 
-	populationRequest, poperr := http.NewRequest("POST", postURL, strings.NewReader(string(requestBody)))
-	if poperr != nil {
-		fmt.Println("Error in creating request for Countries cities:", poperr.Error())
-		log.Fatal(poperr.Error())
-	}
-	populationRequest.Header.Add("Content-Type", "application/json")
-
-	populationResponce, err := client.Do(populationRequest)
-	if err != nil {
-		fmt.Println("Error in sending request to Countries cities:", err.Error())
-	} else if populationResponce.StatusCode != http.StatusOK {
-		fmt.Println("Error in response:", populationResponce.Status)
-	} else if populationResponce.Header.Get("content-type") != "application/json" {
-		fmt.Println("Header structure is not application/json ", populationResponce.Status)
+	// getting responce from API first with common name and if don't work, with official name
+	populationResponce, popError := linker.SendPostRequest(postURL, requestBody, *client)
+	if popError != nil {
+		fmt.Println(w, "Error posting population response: ", popError.Error())
+		ReservePopulationResponce, resPopError := linker.SendPostRequest(postURL, reserveRequestBody, *client)
+		if resPopError != nil {
+			linker.SendErrorAsJson("Error posting population response: ", resPopError, w)
+			return
+		} else {
+			populationResponce = ReservePopulationResponce
+		}
+		defer ReservePopulationResponce.Body.Close()
 	}
 
 	defer populationResponce.Body.Close()
 
-	convertedPopulation, convertingError := buildResponce(*populationResponce, startY, endY)
+	//converting responce to json code
+	convertedPopulation, convertingError := buildResponce(populationResponce, startY, endY)
 	if convertingError != nil {
-		//fmt.Println("Error while converting population:", convertingError.Error())
-		fmt.Fprintf(w, "Error while converting population: %s", convertingError.Error())
-
+		linker.SendErrorAsJson("Error converting population response:", convertingError, w)
+		return
 	} else {
 		json.NewEncoder(w).Encode(convertedPopulation)
 	}
 
 }
 
+// building responce. Putting all response we need in structures and getting information we need
 func buildResponce(response http.Response, startY int, endY int) (ResponsePopulation, error) {
 	var populatinBuild CountryPopulationStructure
 	decoder := json.NewDecoder(response.Body)

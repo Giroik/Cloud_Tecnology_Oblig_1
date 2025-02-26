@@ -66,16 +66,16 @@ func FormatISOandPopulationYears(request string) (string, int, int, error) {
 	return iso, 0, 0, nil
 }
 
-func GetCountryNameByISO(userIso string) (string, error) {
+func GetReserveCountryNameByISO(userIso string) (string, error) {
 	userCountry := constants.NOT_FOUND //init string to return
 
 	//Creating url for get-request
-	isoURL := constants.REQUEST_ISO_CODES
+	reserveIsoURL := constants.RESERVE_REQUEST_ISO_CODES
 
 	//creating request to get all ISO
-	isoRequest, reqIsoErr := http.NewRequest(http.MethodGet, isoURL, nil)
+	isoRequest, reqIsoErr := http.NewRequest(http.MethodGet, reserveIsoURL, nil)
 	if reqIsoErr != nil {
-		return "", errors.New("Error creating request for " + isoURL + ": " + reqIsoErr.Error())
+		return "", errors.New("Error creating reserve request for " + reserveIsoURL + ": " + reqIsoErr.Error())
 	}
 	isoRequest.Header.Add("Content-Type", "application/json")
 
@@ -86,9 +86,9 @@ func GetCountryNameByISO(userIso string) (string, error) {
 	//Getting Responce from server
 	isoResponse, isoErr := isoClient.Do(isoRequest)
 	if isoErr != nil {
-		fmt.Println("Error in response to iso:", isoErr.Error())
+		fmt.Println("Error in response to reserve iso:", isoErr.Error())
 	} else if isoResponse.StatusCode != http.StatusOK {
-		fmt.Println("Error in response to iso:", isoResponse.Status)
+		fmt.Println("Error in response to reserve iso:", isoResponse.Status)
 	} else if isoResponse.Header.Get("content-type") != "application/json" {
 		fmt.Println("Header structure is not application/json ", isoResponse.Status)
 	}
@@ -98,9 +98,9 @@ func GetCountryNameByISO(userIso string) (string, error) {
 	var isoCountryInfo CountriesNowISOCountries
 	isoDecoder := json.NewDecoder(isoResponse.Body)
 	if errDecoder := isoDecoder.Decode(&isoCountryInfo); errDecoder != nil {
-		fmt.Println("Error in decoding response from iso codes:", errDecoder.Error())
+		fmt.Println("Error in decoding response from reserve iso codes:", errDecoder.Error())
 	} else {
-		fmt.Println("All ", len(isoCountryInfo.Data), " iso codes are successful found")
+		fmt.Println("All ", len(isoCountryInfo.Data), "reserve iso codes are successful found")
 	}
 	//searching for right country
 	for _, country := range isoCountryInfo.Data {
@@ -109,57 +109,62 @@ func GetCountryNameByISO(userIso string) (string, error) {
 		}
 	}
 	//If not found run reserve API to confirm not existing
-	if userCountry == constants.NOT_FOUND {
-		countryName, myerror := getReserveCountryNameByISO(userIso)
-		if myerror != nil {
-			return "", myerror
-		}
-		userCountry = countryName //runs reserve api and tries to find ISO there
-	}
+
 	return userCountry, nil
 }
 
 // reserv version of getCountryNameByISO if county was not found in default version
-func getReserveCountryNameByISO(iso string) (string, error) {
-	userCountry := constants.NOT_FOUND                      //init return string
-	reservIsoURL := constants.RESERV_REQUEST_ISO_CODE + iso //preapering url
+func GetCountryNameByISO(iso string) (string, string, error) {
+	userCountry := constants.NOT_FOUND //init return string
+	userCountryOfficial := constants.NOT_FOUND
+	isoURL := constants.REQUEST_ISO_CODE + iso //preapering url
 
 	//Creating request
-	reservIsoRequest, resReqIsoErr := http.NewRequest(http.MethodGet, reservIsoURL, nil)
-	if resReqIsoErr != nil {
-		fmt.Println("Error in creating request for iso codes:", resReqIsoErr.Error())
+	IsoRequest, ReqIsoErr := http.NewRequest(http.MethodGet, isoURL, nil)
+	if ReqIsoErr != nil {
+		fmt.Println("Error in creating request for iso codes:", ReqIsoErr.Error())
 	}
 
 	//creating reserv Client
-	reservIsoClient := &http.Client{}
-	defer reservIsoClient.CloseIdleConnections()
+	isoClient := &http.Client{}
+	defer isoClient.CloseIdleConnections()
 
 	//Geting responce
-	reservIsoResponce, resIsoErr := reservIsoClient.Do(reservIsoRequest)
-	if resIsoErr != nil {
-		fmt.Println("Error in response to reserve iso:", resIsoErr.Error())
-	} else if reservIsoResponce.StatusCode != http.StatusOK {
-		fmt.Println("Error in response to reserve iso:", reservIsoResponce.Status)
-	} else if reservIsoResponce.Header.Get("content-type") != "application/json" {
-		fmt.Println("Header structure is not application/json ", reservIsoResponce.Status)
+	IsoResponce, IsoErr := isoClient.Do(IsoRequest)
+	if IsoErr != nil {
+		fmt.Println("Error in response iso:", IsoErr.Error())
+		fmt.Println(IsoResponce.Body)
+	} else if IsoResponce.StatusCode != http.StatusOK {
+		fmt.Println("Error in response iso:", IsoResponce.Status)
+	} else if IsoResponce.Header.Get("content-type") != "application/json" {
+		fmt.Println("Header structure is not application/json ", IsoResponce.Status)
 	}
-	defer reservIsoResponce.Body.Close()
+	defer IsoResponce.Body.Close()
 
 	//creating structure for other API responce
-	var reserveIsoCheck []CountryIsoCheck
-	reserveIsoDecoder := json.NewDecoder(reservIsoResponce.Body)
-	if errDecoder := reserveIsoDecoder.Decode(&reserveIsoCheck); errDecoder != nil {
-		fmt.Println("Error in decoding response from reserve iso:", errDecoder.Error())
+	var IsoCheck []CountryIsoCheck
+	IsoDecoder := json.NewDecoder(IsoResponce.Body)
+	if errDecoder := IsoDecoder.Decode(&IsoCheck); errDecoder != nil {
+		fmt.Println("Error in decoding response from iso:", errDecoder.Error())
 	}
 	//searching for right country
-	for _, country := range reserveIsoCheck {
+	for _, country := range IsoCheck {
 		if strings.EqualFold(country.Cca2, iso) || strings.EqualFold(country.Cca3, iso) {
 			userCountry = country.Name.Common
+			userCountryOfficial = country.Name.Official
 		}
 	}
 	//if not existing return error
 	if userCountry == constants.NOT_FOUND {
-		return userCountry, errors.New("User country not found")
+		//runs reserve api and tries to find ISO there
+		countryName, myerror := GetReserveCountryNameByISO(iso)
+		if myerror != nil {
+			return "", "", myerror
+		}
+		userCountry = countryName
+		if countryName == constants.NOT_FOUND {
+			return "", "", errors.New("Contry with code iso: " + iso + " not found")
+		}
 	}
-	return userCountry, nil
+	return userCountry, userCountryOfficial, nil
 }

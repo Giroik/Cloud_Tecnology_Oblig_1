@@ -32,3 +32,8 @@ type NameInfo struct {
 	Common   string `json:"common"`
 	Official string `json:"official"`
 }
+
+type ErrorMassage struct {
+	Error    bool   `json:"error"`
+	ErrorMsg string `json:"msg"`
+}

@@ -2,7 +2,7 @@ package statusHandler
 
 import (
 	"OBLIG_1/constants"
-	"OBLIG_1/utility"
+	"OBLIG_1/handler/linker"
 	"encoding/json"
 	"net/http"
 	"time"
@@ -10,8 +10,8 @@ import (
 
 func StatusHandler(w http.ResponseWriter, r *http.Request, startTime time.Time) {
 
-	countriesNowAPIStatus := utility.GetAPIStatus(constants.COUNTRIES_NOW_API, constants.ENDPOINTALL)
-	restCountriesAPIStatus := utility.GetAPIStatus(constants.REST_COUNTRIES_API, constants.ENDPOINTCOUNTRIES)
+	countriesNowAPIStatus := linker.GetAPIStatus(constants.COUNTRIES_NOW_API, constants.ENDPOINTALL)
+	restCountriesAPIStatus := linker.GetAPIStatus(constants.REST_COUNTRIES_API, constants.ENDPOINTCOUNTRIES)
 
 	status := StatusStructur{
 

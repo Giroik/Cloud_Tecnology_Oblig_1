@@ -2,28 +2,25 @@ package countryInfoHandler
 
 import (
 	"OBLIG_1/constants"
+	"OBLIG_1/handler/linker"
 	"OBLIG_1/utility"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
-	"strings"
 )
 
 func InfoHandler(w http.ResponseWriter, request *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	// Instantiate the client
+	client := &http.Client{}
+	defer client.CloseIdleConnections()
+
 	// Convert ISO code to country and checking limits of cities
 	isoCode, limit := utility.FormatISOandLimitOfCities(request.URL.String())
-	countryName, countryError := utility.GetCountryNameByISO(isoCode)
+	countryName, _, countryError := utility.GetCountryNameByISO(isoCode)
 	if countryError != nil {
-		fmt.Fprintf(w, "Error getting country name: %s", countryError.Error())
-		return
-	}
-
-	//preparing json Post-Method
-	requestBody, err := json.Marshal(map[string]string{"country": countryName})
-	if err != nil {
-		fmt.Fprintf(w, "Error marshalling request body: %s", err.Error())
+		linker.SendErrorAsJson("Error getting country name:", countryError, w)
 		return
 	}
 
@@ -31,53 +28,32 @@ func InfoHandler(w http.ResponseWriter, request *http.Request) {
 	restCountriesAlpha := constants.REQUEST_REST_COUNTRIES_API_ALPHA + isoCode
 	countriesNowCities := constants.COUNTRUES_NOW_ALL_CITIES
 
-	request1, errCountries := http.NewRequest(http.MethodGet, restCountriesAlpha, nil)
-	if errCountries != nil {
-		fmt.Println(w, "Error in creating request for Countries: %s", errCountries.Error())
-
-	}
-	request2, errCities := http.NewRequest("POST", countriesNowCities, strings.NewReader(string(requestBody)))
-	if errCities != nil {
-		fmt.Println("Error in creating request for Countries cities:", errCities.Error())
+	//preparing json Post-Method
+	requestBody, err := json.Marshal(map[string]string{"country": countryName})
+	if err != nil {
+		linker.SendErrorAsJson("Error marshalling request body:", err, w)
+		return
 	}
 
-	// Setting content type -> effect depends on the service provider
-	request1.Header.Add("content-type", "application/json")
-	request2.Header.Add("content-type", "application/json")
+	resResponce1, res1err := linker.SendGetRequest(restCountriesAlpha, *client)
+	resResponce2, res2err := linker.SendPostRequest(countriesNowCities, requestBody, *client)
 
-	// Instantiate the client
-	client := &http.Client{}
-	defer client.CloseIdleConnections()
-
-	// Issue request
-	resResponce1, errReq1 := client.Do(request1)
-	if errReq1 != nil {
-		fmt.Printf("Error in response:", errReq1.Error())
-	} else if resResponce1.StatusCode != http.StatusOK {
-		fmt.Printf("Error in response:", resResponce1.Status)
-	} else if resResponce1.Header.Get("content-type") != "application/json" {
-		fmt.Printf("Header structure is not application/json ", resResponce1.Status)
+	if res1err != nil {
+		linker.SendErrorAsJson("Error sending Get request: ", res1err, w)
+		return
 	}
-	defer resResponce1.Body.Close()
-
-	resResponce2, errReq2 := client.Do(request2)
-	if errReq2 != nil {
-		fmt.Printf("Error in response:", errReq2.Error())
-	} else if resResponce2.StatusCode != http.StatusOK {
-		fmt.Printf("Error in response:", resResponce2.Status)
-	} else if resResponce2.Header.Get("content-type") != "application/json" {
-		fmt.Printf("Header structure is not application/json ", resResponce2.Status)
+	if res2err != nil {
+		linker.SendErrorAsJson("Error sending Post request: ", res2err, w)
+		return
 	}
-	defer resResponce2.Body.Close()
 
 	// Decoding JSON
-	countries, countryErr := buildingResponce(*resResponce1, *resResponce2, limit)
+	countries, countryErr := buildingResponce(resResponce1, resResponce2, limit)
 	if countryErr != nil {
-		fmt.Fprintf(w, "Error in building responce: %s", countryErr.Error())
+		linker.SendErrorAsJson("Error building responce:", countryErr, w)
 	}
 
 	// Printing decoded output
-	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(countries)
 
 }

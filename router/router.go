@@ -14,6 +14,7 @@ import (
 var startTime time.Time
 
 func RunAPI() {
+
 	startTime = time.Now()
 
 	PORT := "8080"
