@@ -17,6 +17,7 @@ type PopStruct struct {
 }
 
 type ResponsePopulation struct {
-	Mean   int         `json:"mean"`
-	Values []PopStruct `json:"values"`
+	Country string      `json:"country"`
+	Mean    int         `json:"mean"`
+	Values  []PopStruct `json:"values"`
 }

@@ -31,8 +31,6 @@ func RunAPI() {
 	router.HandleFunc("/countryinfo/v1/status/", func(w http.ResponseWriter, r *http.Request) {
 		statusHandler.StatusHandler(w, r, startTime)
 	})
-	//router.HandleFunc("/bober/{param1...}/", handler.DiagHandler)
-
 	log.Println("Starting server on port " + PORT)
 	log.Fatal(http.ListenAndServe(":"+PORT, router))
 

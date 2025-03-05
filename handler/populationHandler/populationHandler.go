@@ -64,7 +64,7 @@ func PopulationHandler(w http.ResponseWriter, r *http.Request) {
 	defer populationResponce.Body.Close()
 
 	//converting responce to json code
-	convertedPopulation, convertingError := buildResponce(populationResponce, startY, endY)
+	convertedPopulation, convertingError := buildResponce(populationResponce, startY, endY, countryName)
 	if convertingError != nil {
 		linker.SendErrorAsJson("Error converting population response:", convertingError, w)
 		return
@@ -75,7 +75,7 @@ func PopulationHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // building responce. Putting all response we need in structures and getting information we need
-func buildResponce(response http.Response, startY int, endY int) (ResponsePopulation, error) {
+func buildResponce(response http.Response, startY int, endY int, country string) (ResponsePopulation, error) {
 	var populatinBuild CountryPopulationStructure
 	decoder := json.NewDecoder(response.Body)
 	if errDecoder1 := decoder.Decode(&populatinBuild); errDecoder1 != nil {
@@ -83,6 +83,7 @@ func buildResponce(response http.Response, startY int, endY int) (ResponsePopula
 	}
 
 	var populationResponce ResponsePopulation
+	populationResponce.Country = country
 	for _, element := range populatinBuild.Data.Population {
 		if startY == 0 && endY == 0 {
 			populationResponce.Values = append(populationResponce.Values, element)
