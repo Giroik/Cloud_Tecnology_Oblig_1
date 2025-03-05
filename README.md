@@ -115,7 +115,7 @@ http://localhost:8080/countryinfo/v1/status/
 ### Installation
 1. Clone the repository:
    ```sh
-   git clone https://github.com/ErvinsDzafarovs/Cloud_Tecnology_Oblig_1.git
+   git clone https://github.com/Giroik/Cloud_Tecnology_Oblig_1.git
    cd YOUR_REPO
    ```
 2. Install dependencies:
