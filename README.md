@@ -115,7 +115,7 @@ http://localhost:8080/countryinfo/v1/status/
 ### Installation
 1. Clone the repository:
    ```sh
-   git clone https://github.com/TheodorUtvik/Assignment1_Cloud_Technologies.git
+   git clone https://github.com/ErvinsDzafarovs/Cloud_Tecnology_Oblig_1.git
    cd YOUR_REPO
    ```
 2. Install dependencies:
@@ -132,35 +132,30 @@ http://localhost:8080/countryinfo/v1/status/
 
 ## Code Structure
 ```
-Assignment1/
-│── cmd/                     # Entry point for the application
-│   ├── main.go               # Starts the HTTP server
-│
-│── handlers/                # Request handlers for API endpoints
-│   ├── country.go             # Handles country information requests
-│   ├── population.go          # Handles population requests
-│   ├── status.go              # Handles service status requests
-│   ├── handlers_test.go       # Tests some handlers functions
-│
-│── server/                  # Server initialization
-│   ├── server.go             # Registers routes and starts the server
-│
-│── .gitignore               # Git ignore file
-│── go.mod                    # Go module dependencies
-│── README.md                 # Project documentation
+OBLIG 1
+│── constants
+│   └── constats.go
+│── handlers
+│   ├── countryInfoHandler
+│   │   ├── infoHandler.go
+│   │   └── models.go
+│   ├── linker
+│   │   └── linker.go
+│   ├── populationHandler
+│   │   ├── models.go
+│   │   └── populationHandler.go
+│   ├── statusHandler
+│   │   ├── models.go
+│   │   └── statusHandler.go
+│   └── frontPageHandler.go
+│── router
+│   └── router.go
+│── utility
+│   ├── isoManipulations.go
+│   └── structures.go
+│── go.mod
+|── main.go
+│── README.md                 # Documentation
 ```
 
 ---
-
-## Testing
-### Run Tests
-```sh
-go test ./...
-```
-
-### Example Test Output
-```
-?       Assignment1/cmd        [no test files]
-?       Assignment1/server     [no test files]
-ok      Assignment1/handlers   0.312s
-```
