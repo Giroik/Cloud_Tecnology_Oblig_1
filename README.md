@@ -114,14 +114,19 @@ http://localhost:8080/countryinfo/v1/status/
 
 ### Installation
 1. Clone the repository:
-   ```sh
+   ```
    git clone https://github.com/Giroik/Cloud_Tecnology_Oblig_1.git
    cd Cloud_Tecnology_Oblig_1
    ```
 2. Run the server:
-   ```sh
+   ```
    go run cmd/main.go
    ```
+3. Open link in browser
+    ```
+    http://localhost:8080/countryinfo/v1/
+    ```
+4. Welcome to API, all information about links you will find on this address
 
 ---
 
