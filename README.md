@@ -116,17 +116,12 @@ http://localhost:8080/countryinfo/v1/status/
 1. Clone the repository:
    ```sh
    git clone https://github.com/Giroik/Cloud_Tecnology_Oblig_1.git
-   cd YOUR_REPO
+   cd Cloud_Tecnology_Oblig_1
    ```
-2. Install dependencies:
-   ```sh
-   go mod tidy
-   ```
-3. Run the server:
+2. Run the server:
    ```sh
    go run cmd/main.go
    ```
-4. Test API endpoints using `curl` or Postman.
 
 ---
 
@@ -159,3 +154,7 @@ OBLIG 1
 ```
 
 ---
+## Dev Features
+1) In isoManipulations file i implemented 2 methods GetCountryNameByISO and GetReserveCountryNameByISO. First function is 
+checking if this iso code exist in CountriesNow API if not it check also iso code in REST Countries API.
+This methods also returns common name and official name what give more chances to find population and info by using both.
